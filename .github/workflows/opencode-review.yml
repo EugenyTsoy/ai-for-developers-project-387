@@ -1,0 +1,50 @@
+
+name: OpenCode PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    if: ${{ !endsWith(github.event.pull_request.user.login, '[bot]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+      issues: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run OpenCode Review
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: opencode/minimax-m2.7
+          use_github_token: true
+          prompt: |
+            Review this pull request as a senior software engineer.
+
+            Focus on:
+            - Correctness and potential regressions.
+            - React state management and asynchronous behavior.
+            - Test coverage and meaningful assertions.
+            - TypeScript and C# coding standards.
+            - Conventional Commits compliance.
+            - Compatibility with existing project architecture.
+
+            Report only actionable findings.
+            Explain the problem and suggest a concrete improvement.
+            If no significant issues are found, say so briefly.
+
+            Do not modify code, create branches, or merge the PR.
+            Respond in Russian.
