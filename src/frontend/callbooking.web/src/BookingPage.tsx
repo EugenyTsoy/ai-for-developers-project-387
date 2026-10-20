@@ -225,7 +225,7 @@ export default function BookingPage({ client = apiClient }: { client?: ApiClient
           setAvailabilityVersion((version) => version + 1)
         }}>Обновить доступное время</button>
       )}
-      {selectedEventType && selectedSlot && <GuestForm key={`${selectedEventType.id}:${selectedSlot.start}`}
+      {selectedEventType && selectedSlot && <GuestForm
         client={client} eventTypeId={selectedEventType.id} slot={selectedSlot} pending={pending}
         onPending={() => { setPending(true); setBooking(null) }}
         onResult={(result) => {

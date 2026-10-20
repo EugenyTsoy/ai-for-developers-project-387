@@ -97,7 +97,9 @@ test('409 invalidates the stale Slot, reloads availability and allows a new choi
   expect(reads).toBe(2)
   expect(screen.queryByText('Запись подтверждена')).not.toBeInTheDocument()
   expect(screen.queryByText('Do not display me')).not.toBeInTheDocument()
+  await user.clear(screen.getByRole('textbox', { name: 'Имя' }))
   await user.type(screen.getByRole('textbox', { name: 'Имя' }), 'Guest Person')
+  await user.clear(screen.getByRole('textbox', { name: 'Email' }))
   await user.type(screen.getByRole('textbox', { name: 'Email' }), 'guest@example.test')
   await user.click(screen.getByRole('button', { name: 'Записаться' }))
   expect(await screen.findByText('Запись подтверждена')).toBeInTheDocument()
@@ -513,4 +515,34 @@ test.each([
   await selectDate(timezone === 'America/Los_Angeles' ? '2026-10-24' : '2026-10-25')
   expect(await screen.findByRole('button', { name: label })).toBeInTheDocument()
   expect(screen.getByText(`Часовой пояс календаря: ${timezone}`)).toBeInTheDocument()
+})
+
+test('changing the Slot preserves guest name and email and POSTs the new Slot', async () => {
+  const requests: Request[] = []
+  const user = await selectSlotAndFillGuest(clientWith({ requests }))
+  const early = screen.getByRole('button', { name: /02:00 UTC\+02:00/ })
+  const late = screen.getByRole('button', { name: /02:00 UTC\+01:00/ })
+  expect(early).toHaveAttribute('aria-pressed', 'true')
+  expect(late).toHaveAttribute('aria-pressed', 'false')
+  expect(screen.getByRole('textbox', { name: 'Имя' })).toHaveValue('Guest Person')
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('guest@example.test')
+
+  await user.click(late)
+
+  expect(late).toHaveAttribute('aria-pressed', 'true')
+  expect(early).toHaveAttribute('aria-pressed', 'false')
+  expect(screen.getByRole('textbox', { name: 'Имя' })).toHaveValue('Guest Person')
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('guest@example.test')
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Записаться' })).toBeEnabled()
+
+  await user.click(screen.getByRole('button', { name: 'Записаться' }))
+  expect(await screen.findByText('Запись подтверждена')).toBeInTheDocument()
+
+  const posts = requests.filter((request) => request.method === 'POST')
+  expect(posts).toHaveLength(1)
+  expect(await posts[0].json()).toEqual({
+    eventTypeId: 'intro', start: slots[1].start, name: 'Guest Person', email: 'guest@example.test',
+  })
 })
