@@ -546,3 +546,33 @@ test('changing the Slot preserves guest name and email and POSTs the new Slot', 
     eventTypeId: 'intro', start: slots[1].start, name: 'Guest Person', email: 'guest@example.test',
   })
 })
+
+test('changing the Slot clears validation errors while preserving guest fields', async () => {
+  const requests: Request[] = []
+  const user = userEvent.setup()
+  render(<BookingPage client={clientWith({ requests })} />)
+  await user.click(await screen.findByRole('button', { name: /Знакомство/ }))
+  await selectDate()
+  await user.click(await screen.findByRole('button', { name: /02:00 UTC\+02:00/ }))
+
+  await user.type(screen.getByRole('textbox', { name: 'Имя' }), 'Guest Person')
+  await user.type(screen.getByRole('textbox', { name: 'Email' }), 'not-an-email')
+  await user.click(screen.getByRole('button', { name: 'Записаться' }))
+  expect(screen.getByText('Введите корректный email.')).toBeInTheDocument()
+  expect(screen.queryByText('Введите имя.')).not.toBeInTheDocument()
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute('aria-describedby', 'email-error')
+  expect(requests.filter((request) => request.method === 'POST')).toHaveLength(0)
+
+  await user.click(screen.getByRole('button', { name: /02:00 UTC\+01:00/ }))
+
+  expect(screen.queryByText('Введите корректный email.')).not.toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(screen.getByRole('textbox', { name: 'Имя' })).toHaveValue('Guest Person')
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('not-an-email')
+  expect(screen.getByRole('textbox', { name: 'Имя' })).toHaveAttribute('aria-invalid', 'false')
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute('aria-invalid', 'false')
+  expect(screen.getByRole('textbox', { name: 'Имя' })).not.toHaveAttribute('aria-describedby')
+  expect(screen.getByRole('textbox', { name: 'Email' })).not.toHaveAttribute('aria-describedby')
+  expect(requests.filter((request) => request.method === 'POST')).toHaveLength(0)
+})

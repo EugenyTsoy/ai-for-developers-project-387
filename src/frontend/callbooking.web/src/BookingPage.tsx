@@ -26,13 +26,20 @@ function GuestForm({ client, eventTypeId, slot, pending, onPending, onResult }: 
 }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [errors, setErrors] = useState({ name: '', email: '' })
+  const [errorState, setErrorState] = useState<{
+    slotStart: string
+    errors: { name: string; email: string }
+  } | null>(null)
   const active = useRef(false)
   const inFlight = useRef(false)
   useEffect(() => {
     active.current = true
     return () => { active.current = false }
   }, [])
+
+  const errors = errorState?.slotStart === slot.start
+    ? errorState.errors
+    : { name: '', email: '' }
 
   return (
     <form className="guest-form" noValidate onSubmit={(event) => {
@@ -49,7 +56,7 @@ function GuestForm({ client, eventTypeId, slot, pending, onPending, onResult }: 
           : emailValidation.validity.typeMismatch
             ? 'Введите корректный email.' : '',
       }
-      setErrors(validation)
+      setErrorState({ slotStart: slot.start, errors: validation })
       if (validation.name || validation.email) return
       inFlight.current = true
       onPending()
