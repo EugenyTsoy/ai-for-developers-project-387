@@ -519,7 +519,10 @@ test.each([
 
 test('changing the Slot preserves guest name and email and POSTs the new Slot', async () => {
   const requests: Request[] = []
-  const user = await selectSlotAndFillGuest(clientWith({ requests }))
+  const user = await selectSlotAndFillGuest(clientWith({
+    requests,
+    bookingResponse: async () => json(slots[1], 201),
+  }))
   const early = screen.getByRole('button', { name: /02:00 UTC\+02:00/ })
   const late = screen.getByRole('button', { name: /02:00 UTC\+01:00/ })
   expect(early).toHaveAttribute('aria-pressed', 'true')
@@ -539,6 +542,8 @@ test('changing the Slot preserves guest name and email and POSTs the new Slot', 
 
   await user.click(screen.getByRole('button', { name: 'Записаться' }))
   expect(await screen.findByText('Запись подтверждена')).toBeInTheDocument()
+  expect(screen.getByText('25.10.2026, 02:00 UTC+01:00 — 25.10.2026, 02:30 UTC+01:00')).toBeInTheDocument()
+  expect(screen.queryByText(/02:00 UTC\+02:00/)).not.toBeInTheDocument()
 
   const posts = requests.filter((request) => request.method === 'POST')
   expect(posts).toHaveLength(1)
