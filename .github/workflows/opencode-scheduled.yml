@@ -1,0 +1,83 @@
+name: Scheduled Lighthouse Audit
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+
+  workflow_dispatch:
+
+  
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  issues: write
+
+  
+concurrency:
+  group: scheduled-lighthouse-audit
+  cancel-in-progress: false
+
+  
+jobs:
+  lighthouse:
+    name: Lighthouse Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      
+      - name: Warm up Render
+        env:
+          APP_URL: ${{ vars.CALLBOOKING_PUBLIC_URL }}
+        run: |
+          for attempt in {1..12}; do
+            if curl --fail --silent --show-error \
+              --max-time 15 \
+              --output /dev/null \
+              "$APP_URL"; then
+              echo "Application is ready"
+              exit 0
+            fi
+
+            echo "Waiting for Render (attempt $attempt/12)"
+            sleep 5
+          done
+
+          echo "Application did not become ready"
+          exit 1
+
+      
+      - name: Run Lighthouse
+        env:
+          APP_URL: ${{ vars.CALLBOOKING_PUBLIC_URL }}
+        run: |
+          mkdir -p lighthouse-report
+
+          npx --yes lighthouse@12 "$APP_URL" \
+            --chrome-flags="--headless --no-sandbox" \
+            --output=json \
+            --output=html \
+            --output-path=./lighthouse-report/report
+
+      
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: lighthouse-report/
+          retention-days: 7
+          if-no-files-found: warn
+
+
+
+
