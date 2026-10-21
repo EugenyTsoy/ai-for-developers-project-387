@@ -11,10 +11,14 @@ jobs:
   opencode:
     timeout-minutes: 10
     if: |
-      contains(github.event.comment.body, ' /oc') ||
-      startsWith(github.event.comment.body, '/oc') ||
-      contains(github.event.comment.body, ' /opencode') ||
-      startsWith(github.event.comment.body, '/opencode')
+      github.event.sender.type != 'Bot' &&
+      github.actor != 'opencode-agent[bot]' &&
+      (
+        contains(github.event.comment.body, ' /oc') ||
+        startsWith(github.event.comment.body, '/oc') ||
+        contains(github.event.comment.body, ' /opencode') ||
+        startsWith(github.event.comment.body, '/opencode')
+      )
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -28,9 +32,31 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Check author permissions
+        id: access
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const username = context.payload.comment.user.login;
+
+            try {
+              const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                ...context.repo,
+                username
+              });
+
+              const allowed = ['write', 'maintain', 'admin'].includes(data.permission);
+              core.setOutput('allowed', String(allowed));
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              core.setOutput('allowed', 'false');
+            }
+
       - name: Run OpenCode
+        if: steps.access.outputs.allowed == 'true'
         uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         with:
           model: opencode/minimax-m2.7
+          mentions: '/oc,/opencode'

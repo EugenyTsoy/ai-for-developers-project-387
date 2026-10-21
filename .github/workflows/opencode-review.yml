@@ -6,9 +6,12 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
-  review:
-    if: ${{ !endsWith(github.event.pull_request.user.login, '[bot]') }} &&
-        !endsWith(github.actor, '[bot]')
+  review:    
+    if: |
+      github.event.sender.type != 'Bot' &&
+      !endsWith(github.actor, '[bot]') &&
+      !endsWith(github.event.pull_request.user.login, '[bot]')
+
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -16,7 +19,6 @@ jobs:
       id-token: write
       contents: read
       pull-requests: write
-      issues: write
 
     steps:
       - name: Checkout repository

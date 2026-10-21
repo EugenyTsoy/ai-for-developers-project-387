@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Hexlet educational call-booking project. Prefer executable configuration and workflows over `README.md`, which is currently a course template stub.
+Hexlet educational call-booking project. Use `README.md` for project overview, setup instructions, and GitHub agent workflows. Treat executable configuration as the source of truth for actual commands and automation behavior.
 
 ## Structure
 
