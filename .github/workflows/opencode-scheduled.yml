@@ -78,6 +78,48 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
+      
+  analyze:
+    name: OpenCode Lighthouse Analysis
+    needs: lighthouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download Lighthouse report
+        uses: actions/download-artifact@v4
+        with:
+          name: lighthouse-report
+          path: lighthouse-report/
 
 
+      - name: Validate Lighthouse report
+        run: |
+          test -s lighthouse-report/report.report.json
+          python3 -m json.tool lighthouse-report/report.report.json > /dev/null
+      
+      - name: Run OpenCode Analysis
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: opencode/minimax-m2.7
+          prompt: |
+            Analyze the Lighthouse JSON report at
+            lighthouse-report/report.report.json.
 
+            Identify the most important confirmed finding.
+            If a confirmed finding exists, create exactly one GitHub issue describing:
+            - The measured problem and relevant metrics.
+            - Why it matters.
+            - A suggested next step.
+            - A link to this GitHub Actions run.
+
+            Check existing issues to avoid duplicates.
+            If no confirmed finding exists or an equivalent issue is already open, do not create a new issue.
+            Do not invent findings.
+            Do not modify code, create branches, or open PRs.
+            Respond in Russian.
