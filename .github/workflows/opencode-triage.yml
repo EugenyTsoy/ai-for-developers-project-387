@@ -1,0 +1,46 @@
+
+name: OpenCode Issue Triage
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    if: ${{ !endsWith(github.event.issue.user.login, '[bot]') }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+      issues: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run OpenCode Triage
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: opencode/minimax-m2.7
+          prompt: |
+            Analyze the newly created GitHub issue.
+
+            Act as a software engineer performing initial issue triage.
+
+            1. Summarize the user's problem.
+            2. Identify missing information or ambiguities.
+            3. Inspect the relevant parts of the codebase.
+            4. Identify possible causes and affected components.
+            5. Suggest next steps for investigation or implementation.
+
+            Do not modify files, create branches, or open pull requests.
+            Do not assume unverified causes are confirmed.
+
+            Post a concise triage report as a comment on the issue.
+            Respond in Russian.
