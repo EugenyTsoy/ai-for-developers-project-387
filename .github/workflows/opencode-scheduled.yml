@@ -83,7 +83,7 @@ jobs:
     name: OpenCode Lighthouse Analysis
     needs: lighthouse
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 3
 
     steps:
       - name: Checkout repository
