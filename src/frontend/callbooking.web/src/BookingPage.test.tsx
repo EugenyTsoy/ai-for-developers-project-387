@@ -97,7 +97,9 @@ test('409 invalidates the stale Slot, reloads availability and allows a new choi
   expect(reads).toBe(2)
   expect(screen.queryByText('Запись подтверждена')).not.toBeInTheDocument()
   expect(screen.queryByText('Do not display me')).not.toBeInTheDocument()
+  await user.clear(screen.getByRole('textbox', { name: 'Имя' }))
   await user.type(screen.getByRole('textbox', { name: 'Имя' }), 'Guest Person')
+  await user.clear(screen.getByRole('textbox', { name: 'Email' }))
   await user.type(screen.getByRole('textbox', { name: 'Email' }), 'guest@example.test')
   await user.click(screen.getByRole('button', { name: 'Записаться' }))
   expect(await screen.findByText('Запись подтверждена')).toBeInTheDocument()
@@ -513,4 +515,69 @@ test.each([
   await selectDate(timezone === 'America/Los_Angeles' ? '2026-10-24' : '2026-10-25')
   expect(await screen.findByRole('button', { name: label })).toBeInTheDocument()
   expect(screen.getByText(`Часовой пояс календаря: ${timezone}`)).toBeInTheDocument()
+})
+
+test('changing the Slot preserves guest name and email and POSTs the new Slot', async () => {
+  const requests: Request[] = []
+  const user = await selectSlotAndFillGuest(clientWith({
+    requests,
+    bookingResponse: async () => json(slots[1], 201),
+  }))
+  const early = screen.getByRole('button', { name: /02:00 UTC\+02:00/ })
+  const late = screen.getByRole('button', { name: /02:00 UTC\+01:00/ })
+  expect(early).toHaveAttribute('aria-pressed', 'true')
+  expect(late).toHaveAttribute('aria-pressed', 'false')
+  expect(screen.getByRole('textbox', { name: 'Имя' })).toHaveValue('Guest Person')
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('guest@example.test')
+
+  await user.click(late)
+
+  expect(late).toHaveAttribute('aria-pressed', 'true')
+  expect(early).toHaveAttribute('aria-pressed', 'false')
+  expect(screen.getByRole('textbox', { name: 'Имя' })).toHaveValue('Guest Person')
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('guest@example.test')
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Записаться' })).toBeEnabled()
+
+  await user.click(screen.getByRole('button', { name: 'Записаться' }))
+  expect(await screen.findByText('Запись подтверждена')).toBeInTheDocument()
+  expect(screen.getByText('25.10.2026, 02:00 UTC+01:00 — 25.10.2026, 02:30 UTC+01:00')).toBeInTheDocument()
+  expect(screen.queryByText(/02:00 UTC\+02:00/)).not.toBeInTheDocument()
+
+  const posts = requests.filter((request) => request.method === 'POST')
+  expect(posts).toHaveLength(1)
+  expect(await posts[0].json()).toEqual({
+    eventTypeId: 'intro', start: slots[1].start, name: 'Guest Person', email: 'guest@example.test',
+  })
+})
+
+test('changing the Slot clears validation errors while preserving guest fields', async () => {
+  const requests: Request[] = []
+  const user = userEvent.setup()
+  render(<BookingPage client={clientWith({ requests })} />)
+  await user.click(await screen.findByRole('button', { name: /Знакомство/ }))
+  await selectDate()
+  await user.click(await screen.findByRole('button', { name: /02:00 UTC\+02:00/ }))
+
+  await user.type(screen.getByRole('textbox', { name: 'Имя' }), 'Guest Person')
+  await user.type(screen.getByRole('textbox', { name: 'Email' }), 'not-an-email')
+  await user.click(screen.getByRole('button', { name: 'Записаться' }))
+  expect(screen.getByText('Введите корректный email.')).toBeInTheDocument()
+  expect(screen.queryByText('Введите имя.')).not.toBeInTheDocument()
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute('aria-describedby', 'email-error')
+  expect(requests.filter((request) => request.method === 'POST')).toHaveLength(0)
+
+  await user.click(screen.getByRole('button', { name: /02:00 UTC\+01:00/ }))
+
+  expect(screen.queryByText('Введите корректный email.')).not.toBeInTheDocument()
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  expect(screen.getByRole('textbox', { name: 'Имя' })).toHaveValue('Guest Person')
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveValue('not-an-email')
+  expect(screen.getByRole('textbox', { name: 'Имя' })).toHaveAttribute('aria-invalid', 'false')
+  expect(screen.getByRole('textbox', { name: 'Email' })).toHaveAttribute('aria-invalid', 'false')
+  expect(screen.getByRole('textbox', { name: 'Имя' })).not.toHaveAttribute('aria-describedby')
+  expect(screen.getByRole('textbox', { name: 'Email' })).not.toHaveAttribute('aria-describedby')
+  expect(requests.filter((request) => request.method === 'POST')).toHaveLength(0)
 })
