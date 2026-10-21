@@ -101,25 +101,43 @@ jobs:
           test -s lighthouse-report/report.report.json
           python3 -m json.tool lighthouse-report/report.report.json > /dev/null
       
+      
       - name: Run OpenCode Analysis
         uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         with:
           model: opencode/minimax-m2.7
+          use_github_token: true
           prompt: |
-            Analyze the Lighthouse JSON report at
-            lighthouse-report/report.report.json.
+            You are running unattended in GitHub Actions.
 
-            Identify the most important confirmed finding.
-            If a confirmed finding exists, create exactly one GitHub issue describing:
-            - The measured problem and relevant metrics.
-            - Why it matters.
-            - A suggested next step.
-            - A link to this GitHub Actions run.
+            Task: analyze lighthouse-report/report.report.json
+            and create at most one actionable GitHub issue.
 
-            Check existing issues to avoid duplicates.
-            If no confirmed finding exists or an equivalent issue is already open, do not create a new issue.
-            Do not invent findings.
-            Do not modify code, create branches, or open PRs.
-            Respond in Russian.
+            GitHub authentication is already configured.
+            Use the gh CLI with GH_TOKEN from the environment.
+
+            Rules:
+            - Do not inspect tokens or authentication internals.
+            - Do not inspect GitHub Actions implementation files.
+            - Do not access paths outside the repository.
+            - Do not troubleshoot or reconfigure authentication.
+            - Do not modify code, create branches, or open PRs.
+            - Do not attempt alternative authentication methods.
+            - If a command fails, report the error and stop.
+            - Keep the investigation short.
+
+            Steps:
+            1. Read the Lighthouse JSON report.
+            2. Identify one significant finding with measured evidence.
+            3. Check existing open issues using gh issue list.
+            4. If no duplicate exists, create one issue using gh issue create.
+            5. Include metrics, suggested action, and this run URL:
+               https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            If no significant finding exists, create no issue.
+            Respond briefly in Russian.
+
