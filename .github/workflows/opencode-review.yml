@@ -7,7 +7,8 @@ on:
 
 jobs:
   review:
-    if: ${{ !endsWith(github.event.pull_request.user.login, '[bot]') }}
+    if: ${{ !endsWith(github.event.pull_request.user.login, '[bot]') }} &&
+        !endsWith(github.actor, '[bot]')
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
