@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0 (2026-10-21)
+
+
+### Bug Fixes
+
+* allow OpenCode to access GitHub Actions prompt files ([#10](https://github.com/EugenyTsoy/ai-for-developers-project-387/issues/10)) ([c7ee296](https://github.com/EugenyTsoy/ai-for-developers-project-387/commit/c7ee29693e9e5f3de8a9063a02244f4859d37a34))
+* **booking:** preserve guest fields when switching slots ([#1](https://github.com/EugenyTsoy/ai-for-developers-project-387/issues/1)) ([1e435f2](https://github.com/EugenyTsoy/ai-for-developers-project-387/commit/1e435f20dbb754b176735b7446c073b327861ddf))
+* configure GitHub authentication for scheduled OpenCode ([#10](https://github.com/EugenyTsoy/ai-for-developers-project-387/issues/10)) ([3713947](https://github.com/EugenyTsoy/ai-for-developers-project-387/commit/3713947b6d572c09f9213e1ce982410cc21a1d19))
+* exclude Lighthouse artifacts from Git tracking ([#10](https://github.com/EugenyTsoy/ai-for-developers-project-387/issues/10)) ([58fb9c0](https://github.com/EugenyTsoy/ai-for-developers-project-387/commit/58fb9c018fa12471c9dec4a1350a042c3a11cb9b))
+* remove incompatible OpenCode V2 configuration ([#9](https://github.com/EugenyTsoy/ai-for-developers-project-387/issues/9)) ([1184b8d](https://github.com/EugenyTsoy/ai-for-developers-project-387/commit/1184b8d8bb11551d44b68b38261fd62e6e9fe0b6))
+
 ## [1.1.0](https://github.com/EugenyTsoy/ai-for-developers-project-386/compare/v1.0.0...v1.1.0) (2026-10-16)
 
 
