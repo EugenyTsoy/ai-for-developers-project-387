@@ -23,3 +23,7 @@ dist/
 # AI
 .claude/
 .mcp.json
+
+
+# Lighthouse
+lighthouse-report/

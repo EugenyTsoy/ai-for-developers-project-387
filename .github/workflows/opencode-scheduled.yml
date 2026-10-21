@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -101,6 +103,13 @@ jobs:
           test -s lighthouse-report/report.report.json
           python3 -m json.tool lighthouse-report/report.report.json > /dev/null
       
+      - name: Check working tree before OpenCode
+        run: |
+          echo "Tracked changes:"
+          git diff --stat
+
+          echo "Untracked files:"
+          git ls-files --others --exclude-standard      
       
       - name: Run OpenCode Analysis
         uses: anomalyco/opencode/github@latest
